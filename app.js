@@ -18,13 +18,13 @@ const client = new MongoClient(mongoURI)
 
 
       var indexRouter = require('./routes/index');
-      var usersRouter = require('./routes/users');
+      var phonebooksRouter = require('./routes/phonebooks')(db);
 
       var app = express();
 
       // view engine setup
       app.set('views', path.join(__dirname, 'views'));
-      app.set('view engine', 'jade');
+      app.set('view engine', 'react');
 
       app.use(logger('dev'));
       app.use(express.json());
@@ -35,7 +35,7 @@ const client = new MongoClient(mongoURI)
 
 
       app.use('/', indexRouter);
-      app.use('/users', usersRouter);
+      app.use('/api/phonebooks', phonebooksRouter);
 
       // catch 404 and forward to error handler
       app.use(function (req, res, next) {
@@ -43,17 +43,16 @@ const client = new MongoClient(mongoURI)
       });
 
       // error handler
-      app.use(function (err, req, res, next) {
-        // set locals, only providing error in development
-        res.locals.error = req.app.get('env') === 'development' ? err : {};
-        res.locals.message = err.message;
-
-        // render the error page
-        res.status(err.status || 500);
-        res.render('error');
+      app.use((err, req, res, next) => {
+        console.error(err.stack);
+        res.status(err.status || 500).json({
+          status: 'error',
+          message: err.message || 'Internal Server Error'
+        });
       });
 
-      const PORT = process.env.PORT || 3000;
+
+      const PORT = process.env.PORT || 3001;
       app.listen(PORT, () => {
         console.log(`🚀 Server running at http://localhost:${PORT}`);
       });
