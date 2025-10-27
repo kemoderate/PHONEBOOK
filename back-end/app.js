@@ -6,6 +6,8 @@ var logger = require('morgan');
 const { MongoClient } = require('mongodb')
 const mongoURI = 'mongodb://127.0.0.1:27017'
 const client = new MongoClient(mongoURI)
+const fs = require('fs')
+const multer = require('multer')
 
 
   ; (async () => {
@@ -17,13 +19,27 @@ const client = new MongoClient(mongoURI)
 
 
 
-      var indexRouter = require('./routes/index');
-      var phonebooksRouter = require('./routes/phonebooks')(db);
+      var indexRouter = require('../routes/index');
+      var phonebooksRouter = require('../routes/phonebooks')(db);
 
       var app = express();
+      const uploadDir = path.join(__dirname,'../public/uploads')
 
+      if (!fs.existsSync(uploadDir)) {
+      fs.mkdirSync(uploadDir, { recursive: true });
+
+        const storage = multer.diskStorage({
+          destination: (req, file , cb) => cb(null, uploadDir),
+          filename: (req, file , cb) => {
+            const ext = path.extname(file.originalname)
+            const fileName = `${Date.now()}${ext}`
+            cb(null, fileName)
+          }
+        }) 
+}
       // view engine setup
       app.set('views', path.join(__dirname, 'views'));
+      
       app.set('view engine', 'react');
 
       app.use(logger('dev'));

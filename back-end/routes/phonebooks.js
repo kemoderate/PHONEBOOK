@@ -7,7 +7,7 @@ module.exports = (db) => {
   const router = express.Router();
   const phonebooks = db.collection('phonebooks');
   const { ObjectId } = require('mongodb')
-
+  
 
 
 /* GET home page. */
@@ -46,7 +46,7 @@ router.get('/',async (req, res) => {
       const totalPages = limit ===  0 ? 1 : Math.ceil(totalUsers / limit);
       const data = await phonebooks.find(filter).sort(sortOptions).skip(skip).limit(limit).toArray();
 
-      if (req.xhr || req.headers.accept.indexOf('json') > -1) {
+      {
         return res.json({
           phonebooks: data,
           page,
@@ -62,11 +62,6 @@ router.get('/',async (req, res) => {
       res.status(500).json({ error: err.message })
     }
 });
-
-
-router.get
-
-
 
 
 
@@ -89,15 +84,48 @@ router.post('/', async (req, res) => {
 
 
 
-router.post('/', async (req,res) => {
-  try{
+router.put('/edit/:id', async (req,res) => {
+  try{  
+    const id = req.params.id
+    const _id = new ObjectId(id)
+    const {name, phone,updatedAt,avatar} = req.body;
+   const updatedContact = {
+    $set:{
+    name,
+    phone,
+    avatar: avatar || null,
+    updatedAt
+   }
+   }
 
+    const result = await phonebooks.updateOne(({_id}),updatedContact)
+    res.status(201).json({id, result})
   }catch(err){
-    
+    res.status(500).json({error: err.message})
   }
-
 })
 
+router.put('/edit/:id/avatar', async (req,res) =>{
+  try{
+  const id = req.params.id
+  const _id = new Object(id);
+  const avatarPath = `/uploads/${req.file.filename}` 
 
+  const result = await phonebooks.updateOne(
+    {_id},
+    {
+      $set: {
+        avatar: avatarPath,
+        updatedAt: new Date()
+      }
+    }
+  );
+  res.json 
+})
+}catch(err)
+res.status(500).json({error: err.message})
+
+
+)}
 return router
 }
