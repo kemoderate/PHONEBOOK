@@ -1,6 +1,6 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@/node_modules/@react-navigation/native/lib/typescript/srcvigation/native/lib/typescript/src';
+import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { Stack } from 'expo-router';
-import { StatusBar } from '@/node_modules/expo-status-bar/build/StatusBarexpo-status-bar/build/StatusBar';
+import { StatusBar } from 'expo-status-bar';
 import 'react-native-reanimated';
 
 import { useColorScheme } from '@/hooks/use-color-scheme';

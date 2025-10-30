@@ -8,6 +8,7 @@ const mongoURI = 'mongodb://127.0.0.1:27017'
 const client = new MongoClient(mongoURI)
 const fs = require('fs')
 const multer = require('multer')
+const cors = require('cors');
 
 
   ; (async () => {
@@ -19,8 +20,8 @@ const multer = require('multer')
 
 
 
-      var indexRouter = require('../routes/index');
-      var phonebooksRouter = require('../routes/phonebooks')(db);
+      var indexRouter = require('./routes/index');
+      var phonebooksRouter = require('./routes/phonebooks')(db);
 
       var app = express();
       const uploadDir = path.join(__dirname,'../public/uploads')
@@ -41,7 +42,8 @@ const multer = require('multer')
       app.set('views', path.join(__dirname, 'views'));
       
       app.set('view engine', 'react');
-
+      
+      app.use(cors());
       app.use(logger('dev'));
       app.use(express.json());
       app.use(express.urlencoded({ extended: false }));
@@ -76,4 +78,6 @@ const multer = require('multer')
     } catch (err) {
       console.error('mongoDB connection failed:', err)
     }
+
+    
   })();

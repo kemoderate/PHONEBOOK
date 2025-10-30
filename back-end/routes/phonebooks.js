@@ -105,10 +105,10 @@ router.put('/edit/:id', async (req,res) => {
   }
 })
 
-router.put('/edit/:id/avatar', async (req,res) =>{
+router.put('/edit/:id/avatar', async (req,res) => {
   try{
   const id = req.params.id
-  const _id = new Object(id);
+  const _id = new ObjectId(id);
   const avatarPath = `/uploads/${req.file.filename}` 
 
   const result = await phonebooks.updateOne(
@@ -121,11 +121,24 @@ router.put('/edit/:id/avatar', async (req,res) =>{
     }
   );
   res.json 
+}catch(err){
+res.status(500).json({error: err.message});
+}
 })
-}catch(err)
-res.status(500).json({error: err.message})
 
 
-)}
+router.delete('/delete/:id', async (req, res) => {
+  try{
+    const id = req.params.id
+    const _id = new ObjectId(id);
+    const result = await phonebooks.deleteOne({_id});
+    res.status(200).json({deleteCount : result.deleteCount})
+
+  }catch(err){
+    res.status(500).json({error:err.message})
+  }
+
+})
+
 return router
 }
