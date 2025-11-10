@@ -1,30 +1,39 @@
-import React, { useEffect, useState } from 'react';
-import { View, Text, TextInput, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
+import React, {useEffect, useCallback, useState } from 'react';
+import { View, Text, TextInput, FlatList, TouchableOpacity, StyleSheet, useWindowDimensions } from 'react-native';
 import { useRouter } from 'expo-router';
 import api from '../services/api';
 import ContactItem from '../components/ContactItem';
+import { useFocusEffect } from '@react-navigation/native';
 
 export default function HomeScreen() {
   const router = useRouter();
   const [contacts, setContacts] = useState([]);
+  
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
 
+  const { width } = useWindowDimensions();
+
+  const numColumns = width > 1200 ? 5 : width > 800 ? 3 : width > 500 ? 2 : 1 ;
   const fetchContacts = async () => {
     try {
       const res = await api.get('/', { params: { page, search } });
       console.log(' Backend response:', res.data);
       setContacts(res.data.phonebooks || []);
       setTotalPages(res.data.totalPages || 1);
+   
     } catch (err) {
       console.error(' Error fetching contacts:', err.message);
     }
   };
 
-  useEffect(() => {
+
+useFocusEffect(
+  useCallback(() => {
     fetchContacts();
-  }, [page, search]);
+  }, [page, search])
+);
 
   const handleDelete = async (id) => {
     try {
@@ -34,6 +43,8 @@ export default function HomeScreen() {
       console.error(' Error deleting contact:', err.message);
     }
   };
+  console.log("Contacts:", contacts);
+
 
   return (
     <View style={styles.container}>
@@ -55,6 +66,7 @@ export default function HomeScreen() {
       <FlatList
         data={contacts}
         keyExtractor={(item) => item._id}
+        numColumns={numColumns}
         renderItem={({ item }) => (
           <ContactItem
             contact={item}

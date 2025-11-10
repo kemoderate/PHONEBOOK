@@ -1,13 +1,11 @@
 var express = require('express');
 
 
-
-module.exports = (db) => {
+module.exports = (db,upload) => {
 
   const router = express.Router();
   const phonebooks = db.collection('phonebooks');
   const { ObjectId } = require('mongodb')
-  
 
 
 /* GET home page. */
@@ -65,15 +63,16 @@ router.get('/',async (req, res) => {
 
 
 
-router.post('/', async (req, res) => {
+router.post('/',upload.single('avatar'), async (req, res) => {
     try {
       const { name, phone } = req.body;
+      const avatarPath = req.file ? `/uploads/${req.file.filename}`: null;
       const newContact = {
         name,
         phone,
         createdAt: new Date(),
         updatedAt: new Date(),
-        avatar: null
+        avatar: avatarPath,
       }
       const result = await phonebooks.insertOne(newContact);
       res.status(201).json({id: result.insertedId,...newContact,});
@@ -82,6 +81,22 @@ router.post('/', async (req, res) => {
     }
   });
 
+
+  router.get('/:id', async (req, res) => {
+  try {
+    const id = req.params.id;
+    const contact = await db.collection('phonebooks').findOne({ _id: new ObjectId(id) });
+    
+    if (!contact) {
+      return res.status(404).json({ error: 'Contact not found' });
+    }
+
+    res.json(contact);
+  } catch (err) {
+    console.error('Error fetching contact:', err.message);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
 
 
 router.put('/edit/:id', async (req,res) => {
@@ -98,14 +113,14 @@ router.put('/edit/:id', async (req,res) => {
    }
    }
 
-    const result = await phonebooks.updateOne(({_id}),updatedContact)
+    const result = await phonebooks.updateOne({_id},updatedContact)
     res.status(201).json({id, result})
   }catch(err){
     res.status(500).json({error: err.message})
   }
 })
 
-router.put('/edit/:id/avatar', async (req,res) => {
+router.put('/edit/:id/avatar', upload.single('avatar'), async (req,res) => {
   try{
   const id = req.params.id
   const _id = new ObjectId(id);
@@ -120,7 +135,7 @@ router.put('/edit/:id/avatar', async (req,res) => {
       }
     }
   );
-  res.json 
+  res.json({message: 'avatar updated',result})
 }catch(err){
 res.status(500).json({error: err.message});
 }
@@ -132,7 +147,7 @@ router.delete('/delete/:id', async (req, res) => {
     const id = req.params.id
     const _id = new ObjectId(id);
     const result = await phonebooks.deleteOne({_id});
-    res.status(200).json({deleteCount : result.deleteCount})
+    res.status(200).json({deletedCount : result.deletedCount})
 
   }catch(err){
     res.status(500).json({error:err.message})

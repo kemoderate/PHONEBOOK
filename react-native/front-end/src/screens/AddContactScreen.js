@@ -28,12 +28,22 @@ export default function AddContactScreen() {
     }
 
     try {
-      const res = await api.post('/', { name, phone });
+      const formData = new FormData()
+      formData.append('name',name);
+      formData.append('phone',phone);
+
       if (avatar) {
-        await uploadAvatar(res.data.id);
-      }
+      formData.append('avatar',{
+        uri:avatar,
+        type:'image/jpeg',
+        name:'avatar.jpg',
+      })
+    }
+    await api.post('/',formData,{
+      headers:{'Content-Type': 'multipart/form-data'},
+    })
       Alert.alert('Success', 'Contact added!');
-      navigation.goBack();
+      router.push('/');
     } catch (err) {
       Alert.alert('Error', err.message);
     }
