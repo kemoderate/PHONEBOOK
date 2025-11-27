@@ -1,38 +1,53 @@
 import React, { useEffect, useCallback, useState } from 'react';
-import { View, Text, TextInput, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
+import {
+  View,
+  TextInput,
+  FlatList,
+  TouchableOpacity,
+  StyleSheet,
+} from 'react-native';
 import { useRouter } from 'expo-router';
 import api from '../services/api';
 import ContactItem from '../components/ContactItem';
 import { useFocusEffect } from '@react-navigation/native';
 import useResponsive from "../../hooks/useResponsive";
-
+import { FontAwesome } from '@expo/vector-icons';
 
 export default function HomeScreen() {
   const router = useRouter();
-  const [contacts, setContacts] = useState([]);
 
+  // data & UI state
+  const [contacts, setContacts] = useState([]);
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(false);
   const [totalPages, setTotalPages] = useState(1);
 
-  // ⚠ FIX RESPONSIVE HOOK
-  const { isDesktop, columns } = useResponsive();
-  const limit = 16;
+  // sort state (moved inside component)
+  const [sortOrder, setSortOrder] = useState('asc'); // 'asc' or 'desc'
 
-  const fetchContacts = async (reset = false) => {
+  const { columns } = useResponsive();
+  const limit = 50;
+
+  // fetchContacts now accepts optional order param
+  const fetchContacts = async (reset = false, order = sortOrder) => {
     if (loading) return;
     setLoading(true);
 
     try {
-      const res = await api.get('/', { params: { page, search, limit } });
+      const res = await api.get('/', {
+        params: { page, search, limit, sortBy: 'name', sortMode: order },
+      });
+
       const pageData = res.data.phonebooks || [];
       const backendTotalPages = res.data.totalPages || 1;
 
-      reset
-        ? setContacts(pageData)
-        : setContacts(prev => [...prev, ...(pageData || [])]);
+      if (reset) {
+        setContacts(pageData);
+      } else {
+        setContacts(prev => [...prev, ...(pageData || [])]);
+      }
 
       setTotalPages(backendTotalPages);
       setHasMore(page < backendTotalPages);
@@ -43,22 +58,37 @@ export default function HomeScreen() {
     }
   };
 
+  // toggleSort: flip order, reset page, and reload (pass new order explicitly)
+  const toggleSort = () => {
+    const next = sortOrder === 'asc' ? 'desc' : 'asc';
+    setSortOrder(next);
+    setPage(1);
+    // fetch with reset and new order
+    fetchContacts(true, next);
+  };
+
+  // reload on focus / when search or sortOrder changes
   useFocusEffect(
     useCallback(() => {
       setContacts([]);
       setPage(1);
-      fetchContacts(true);
-    }, [search])
+      fetchContacts(true, sortOrder);
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [search, sortOrder])
   );
 
+  // fetch next pages when page changes
   useEffect(() => {
-    if (page > 1) fetchContacts();
+    if (page > 1) fetchContacts(false, sortOrder);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page]);
 
   const handleDelete = async (id) => {
     try {
       await api.delete(`/${id}`);
-      fetchContacts(true);
+      // after delete, reload first page with current sort/search
+      setPage(1);
+      fetchContacts(true, sortOrder);
     } catch (err) {
       console.error('Error deleting:', err.message);
     }
@@ -66,100 +96,136 @@ export default function HomeScreen() {
 
   return (
     <View style={styles.container}>
-
-      {/* ⚠ MOVE PAGINATION *INSIDE* CONTAINER */}
-      {isDesktop && (
-        <View style={styles.pagination}>
-          {Array.from({ length: totalPages }, (_, i) => (
-            <TouchableOpacity
-              key={i}
-              onPress={() => {
-                setPage(i + 1);
-                fetchContacts(true);
-              }}
-              style={[styles.pageBtn, i + 1 === page && { backgroundColor: '#007bff' }]}
-            >
-              <Text style={{ color: i + 1 === page ? '#fff' : '#000' }}>
-                {i + 1}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
-      )}
-
-      {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.addBtn} onPress={() => router.push('/add-contact')}>
-          <Text style={styles.addBtnText}>+ Add</Text>
+      {/* HEADER */}
+      <View style={styles.headerContainer}>
+        {/* SORT BUTTON */}
+        <TouchableOpacity style={styles.sortBtn} onPress={toggleSort}>
+          <FontAwesome
+            name={sortOrder === 'asc' ? 'sort-alpha-asc' : 'sort-alpha-desc'}
+            size={18}
+            color="#000"
+          />
         </TouchableOpacity>
 
-        <TextInput
-          style={styles.searchInput}
-          placeholder="Search name or phone..."
-          value={search}
-          onChangeText={setSearch}
-        />
+        {/* SEARCH BOX */}
+        <View style={styles.searchWrapper}>
+          <FontAwesome name="search" size={16} color="#444" style={{ marginRight: 8 }} />
+          <TextInput
+            style={styles.searchInput}
+            placeholder="Search name or phone..."
+            value={search}
+            onChangeText={(text) => {
+              setSearch(text);
+              // when user types, reset page and contacts and debounce if needed
+              setContacts([]);
+              setPage(1);
+            }}
+          />
+        </View>
+
+        {/* ADD BUTTON */}
+        <TouchableOpacity
+          style={styles.addBtn}
+          onPress={() => router.push('/add-contact')}
+        >
+          <FontAwesome name="user-plus" size={18} color="#000" />
+        </TouchableOpacity>
       </View>
 
-      {/* List */}
+      {/* GRID LIST */}
       <FlatList
         data={contacts}
-        key={columns}   // ✔ rerender on layout change
-        numColumns={columns}   // ✔ responsive grid
+        key={columns}
+        numColumns={columns}
         keyExtractor={(item) => item._id}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={styles.grid}
+        columnWrapperStyle={columns > 1 ? styles.row : null}
         renderItem={({ item }) => (
-           <View style={{ flex: 1 / columns }}>
-          <ContactItem
-            contact={item}
-            onPress={() =>
-              router.push({
-                pathname: '/edit-contact',
-                params: { contactId: item._id },
-              })
-            }
-            onDelete={() => handleDelete(item._id)}
-          />
+          <View style={styles.cardWrapper(columns)}>
+            <ContactItem
+              contact={item}
+              onPress={() =>
+                router.push({
+                  pathname: '/edit-contact',
+                  params: { contactId: item._id },
+                })
+              }
+              onDelete={() => handleDelete(item._id)}
+            />
           </View>
         )}
-        onEndReachedThreshold={0.01}
+        onEndReachedThreshold={0.2}
         onEndReached={() => {
-          if (hasMore && !loading) {
-            setPage(prev => prev + 1);
-          }
+          if (hasMore && !loading) setPage(prev => prev + 1);
         }}
       />
-
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 20 },
-  header: { flexDirection: 'row', marginBottom: 10 },
-  searchInput: {
+  container: {
     flex: 1,
+    paddingHorizontal: 10,
+    paddingTop: 20,
+  },
+
+  headerContainer: {
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 10,
+  },
+  sortBtn: {
+    width: 40,
+    height: 40,
+    backgroundColor: '#B8860B',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 6,
+    marginRight: 10,
+  },
+
+  searchWrapper: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
     borderWidth: 1,
     borderColor: '#ccc',
+    paddingHorizontal: 10,
     borderRadius: 8,
-    padding: 10,
-    marginLeft: 10,
+    marginHorizontal: 6,
+    height: 40,
   },
-  pagination: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    marginBottom: 15,
-    gap: 6
+  searchInput: {
+    flex: 1,
+    paddingVertical: 6,
   },
-  pageBtn: {
-    padding: 10,
-    backgroundColor: '#eee',
-    borderRadius: 6
+
+  addBtn: {
+    width: 40,
+    height: 40,
+    backgroundColor: '#B8860B',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderRadius: 6,
+    marginLeft: 6,
   },
-  addBtn: { backgroundColor: '#007bff', padding: 10, borderRadius: 8 },
-  addBtnText: { color: '#fff', fontWeight: 'bold' },
-  grid:{
+
+  grid: {
     paddingBottom: 40,
-  }
+  },
+
+  row: {
+    justifyContent: 'space-between',
+    gap: 8,
+    marginBottom: 12,
+  },
+
+  cardWrapper: (columns) => ({
+    width: `${100 / columns}%`,
+    padding: 6,
+    marginBottom: 12,
+  }),
 });
