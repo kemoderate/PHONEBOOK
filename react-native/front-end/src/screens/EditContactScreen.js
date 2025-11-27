@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, Alert } fro
 import api from '../services/api';
 import * as ImagePicker from 'expo-image-picker';
 import {useLocalSearchParams, useRouter } from 'expo-router'
+import { pickAndUploadAvatar } from '../utils/uploadAvatar';
 
 
 export default function EditContactScreen() {
@@ -36,46 +37,51 @@ if (!contact) {
   );
 }
 
-  const pickImage = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      allowsEditing: true,
-      quality: 0.7,
-      mediaTypes: ImagePicker.MediaTypeOptions.Images
-    });
-    if (!result.canceled) {
-      setAvatar(result.assets[0].uri);
+
+
+const handlePickAvatar = async () => {
+  try{
+    const uploadedPath = await pickAndUploadAvatar(contact._id);
+    if(uploadedPath){
+      setAvatar(uploadedPath);
+      Alert.alert('success', 'Avatar uploaded successfully')
+    }else{
+      Alert.alert('cancelled','no image selected')
     }
-  };
+  }catch(err){
+    Alert.alert('Upload Error',err.message)
+  }
+}
 
   const handleUpdate = async () => {
     try {
+     let avatarPath = avatar;
+
+      if (avatar && avatar.startsWith('file')) {
+        const formData = new FormData();
+        const ext = avatar.split('.').pop();
+        formData.append('avatar',{
+          uri: avatar,
+          type: `image/${ext}`,
+          name: `avatar.${ext}`,
+       });
+    const uploadRes = await api.put(`/edit/${contact._id}/avatar` ,formData,{
+        headers:{'Content-Type': 'multipart/form-data'},
+      });
+       if (uploadRes.data?.path) {
+        // Build full URL for preview
+        avatarPath =  uploadRes.data.path;;
+      }
+    }
+
+
       await api.put(`/edit/${contact._id}`,{
       name,
       phone,
       updatedAt:new Date().toISOString(),
-      avatar
+      avatar: avatarPath,
        })
-       const updatePayload = {
-        name,
-        phone,
-        updatedAt: new Date().toISOString(),
-       }
-   if (avatar && !avatar.startsWith('file')) {
-      updatePayload.avatar = avatar;
-    }
-
-      if (avatar && avatar.startsWith('file')) {
-        const formData = new FormData();
-        formData.append('avatar',{
-          uri: avatar,
-          type: 'image/jpeg',
-          name: 'avatar.jpg',
-        });
       
-      await api.put(`/edit/${contact._id}/avatar` ,formData,{
-        headers:{'Content-Type': 'multipart/form-data'},
-      });
-      }
       Alert.alert('Success', 'Contact updated!');
       router.push('/');
     } catch (err) {
@@ -110,10 +116,12 @@ if (!contact) {
     <View style={styles.container}>
       <Text style={styles.title}>Edit Contact</Text>
 
-      <TouchableOpacity onPress={pickImage}>
+      <TouchableOpacity onPress={handlePickAvatar}>
         {avatar ? (
-          <Image source={{ uri: avatar }} style={styles.avatar} />
-        ) : (
+        <Image
+            source={{ uri: avatar.startsWith('/uploads') ? `${api.defaults.baseURL}${avatar}` : avatar }}
+            style={styles.avatar}
+          />) : (
           <View style={styles.avatarPlaceholder}>
             <Text>Pick Avatar</Text>
           </View>

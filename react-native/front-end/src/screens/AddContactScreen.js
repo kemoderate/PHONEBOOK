@@ -32,11 +32,12 @@ export default function AddContactScreen() {
       formData.append('name',name);
       formData.append('phone',phone);
 
+      const ext = avatar.split('.').pop();
       if (avatar) {
       formData.append('avatar',{
         uri:avatar,
-        type:'image/jpeg',
-        name:'avatar.jpg',
+        type:`image/${ext}`,
+        name:`avatar.${ext}`,
       })
     }
     await api.post('/',formData,{

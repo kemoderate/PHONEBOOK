@@ -5,17 +5,19 @@ import { FontAwesome } from '@expo/vector-icons';
 export default function ContactItem({ contact, onPress, onDelete }) {
   return (
     <View style={styles.card}>
+       <View style={styles.row}>
       {/* Avatar */}
       <Image
         source={
           contact.avatar
-            ? { uri: `http://192.168.1.21:3001${contact.avatar}` } // Always check IP
+            ? { uri: `http://192.168.1.21:3001${contact.avatar}?t=${Date.now()}` } // Always check IP
             : require('../assets/avatar-placeholder.png')
         }
         style={styles.avatar}
       />
 
       {/* Info */}
+           <View style={{ flex: 1 }}>
       <Text style={styles.name}>{contact.name}</Text>
       <Text style={styles.phone}>{contact.phone}</Text>
 
@@ -29,34 +31,45 @@ export default function ContactItem({ contact, onPress, onDelete }) {
         </TouchableOpacity>
       </View>
     </View>
+    </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   card: {
-    backgroundColor: '#ccc',
+    backgroundColor: '#d1d1d1',
     borderRadius: 10,
-    padding: 15,
+    padding: 10,
     marginVertical: 8,
-    marginHorizontal: 5,
+    flex: 1,
+    flexShrink:0,
+    minHeight: 100,
+    maxHeight: 220,
     alignItems: 'center',
+    flexGrow: 1,
+    width: "100%",
+    maxWidth: 350,
+  },
+  row:{
+    flexDirection:"row",
+    alignItems:"center",
+
   },
   avatar: {
-    width: 60,
-    height: 60,
-    borderRadius: 30,
-    marginBottom: 10,
+    width: 70,
+    height: 70,
+    borderRadius: 35,
+    marginBottom: 15,
   },
   name: {
     fontSize: 16,
     fontWeight: '600',
-    textAlign: 'center',
   },
   phone: {
     fontSize: 14,
     color: '#333',
     marginBottom: 5,
-    textAlign: 'center',
   },
   actions: {
     flexDirection: 'row',

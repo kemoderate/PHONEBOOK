@@ -53,7 +53,6 @@ router.get('/',async (req, res) => {
           totalUsers,
           sortBy,
           sortMode,
-          totalUsers
         })
       }
     } catch (err) {
@@ -135,14 +134,18 @@ router.put('/edit/:id/avatar', upload.single('avatar'), async (req,res) => {
       }
     }
   );
-  res.json({message: 'avatar updated',result})
+  res.json({message: 'avatar updated',
+            filename: req.file.filename,
+            path: avatarPath,
+            result
+          });
 }catch(err){
 res.status(500).json({error: err.message});
 }
 })
 
 
-router.delete('/delete/:id', async (req, res) => {
+router.delete('/:id', async (req, res) => {
   try{
     const id = req.params.id
     const _id = new ObjectId(id);
