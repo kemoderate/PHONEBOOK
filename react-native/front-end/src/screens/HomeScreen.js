@@ -17,7 +17,7 @@ import * as ImagePicker from "expo-image-picker";
 export default function HomeScreen() {
   const router = useRouter();
   const [editingId, setEditingId] = useState(null);
- 
+  
   // data & UI state
   const [contacts, setContacts] = useState([]);
   const [search, setSearch] = useState('');
@@ -29,7 +29,8 @@ export default function HomeScreen() {
   // sort state (moved inside component)
   const [sortOrder, setSortOrder] = useState('asc'); // 'asc' or 'desc'
 
-  const { columns } = useResponsive();
+  const { isMobile, isTablet, isDesktop, columns } = useResponsive();
+
   const limit = 50;
 
   // fetchContacts now accepts optional order param
@@ -87,25 +88,17 @@ export default function HomeScreen() {
 
   const changeAvatar = async (id) => {
   try {
-    // Buka Image Picker
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 0.7,
-    });
-
-    if (result.canceled) return;
-
-    const image = result.assets[0];
-
     const formData = new FormData();
-    formData.append("avatar", {
-      uri: image.uri,
-      name: "avatar.jpg",
-      type: "image/jpeg",
-    });
-
+    if (image.file) {
+      formData.append("avatar", image.file);
+    }else{
+      // MOBILE (ImagePicker)
+      formData.append("avatar", {
+        uri: image.uri,
+        type: "image/jpeg",
+        name: "avatar.jpg",
+      });
+    }
     // Upload ke backend
     await api.put(`/${id}/avatar`, formData, {
       headers: { "Content-Type": "multipart/form-data" },
@@ -191,7 +184,7 @@ export default function HomeScreen() {
         contentContainerStyle={styles.grid}
         columnWrapperStyle={columns > 1 ? styles.row : null}
         renderItem={({ item }) => (
-          <View style={styles.cardWrapper(columns)}>
+          <View style={styles.cardWrapper}>
             <ContactItem
               contact={item}
               isEditing={editingId === item._id}
@@ -199,6 +192,7 @@ export default function HomeScreen() {
               onCancel={() => setEditingId(null)}
               onSave={(data) => updateContact(item._id, data)}
               onDelete={() => handleDelete(item._id)}
+               onChangeAvatar={() => changeAvatar(item._id)} 
             />
           </View>
         )}
@@ -265,14 +259,16 @@ const styles = StyleSheet.create({
   },
 
   row: {
-    justifyContent: 'space-between',
-    gap: 8,
-    marginBottom: 12,
+    flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'flex-start',
+    gap: 10,
+    marginBottom: 10,
   },
 
-  cardWrapper: (columns) => ({
-    width: `${100 / columns}%`,
+  cardWrapper:{
+    flex: 1,
     padding: 6,
-    marginBottom: 12,
-  }),
+    minWidth:0,
+  },
 });

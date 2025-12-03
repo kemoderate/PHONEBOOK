@@ -8,6 +8,7 @@ import {
   TextInput,
 } from "react-native";
 import { FontAwesome } from "@expo/vector-icons";
+import AvatarPicker from '../components/AvatarPicker';
 
 export default function ContactItem({
   contact,
@@ -35,13 +36,13 @@ export default function ContactItem({
 
         {/* Avatar */}
         <TouchableOpacity onPress={onChangeAvatar}>
-          <Image
-            source={
+          <AvatarPicker
+            avatarUrl={
               contact.avatar
-                ? { uri: `http://192.168.1.15:3001${contact.avatar}?t=${Date.now()}` }
-                : require("../assets/avatar-placeholder.png")
+                ? `http://192.168.1.15:3001${contact.avatar}`
+                : null
             }
-            style={styles.avatar}
+            onSelect={(image) => onChangeAvatar(contact._id, image)}
           />
         </TouchableOpacity>
 
