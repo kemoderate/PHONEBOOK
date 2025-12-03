@@ -5,6 +5,7 @@ import {
   FlatList,
   TouchableOpacity,
   StyleSheet,
+  Image,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import api from '../services/api';
@@ -74,8 +75,7 @@ export default function HomeScreen() {
   useFocusEffect(
     useCallback(() => {
       setContacts([]);
-      setPage(1);
-      fetchContacts(true, sortOrder);
+      reloadContacts();
       // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [search, sortOrder])
   );
@@ -86,12 +86,12 @@ export default function HomeScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page]);
 
-  const changeAvatar = async (id) => {
+  const changeAvatar = async (id, image) => {
   try {
     const formData = new FormData();
-    if (image.file) {
+    if (image?.file) {
       formData.append("avatar", image.file);
-    }else{
+    }else if (image?.uri){
       // MOBILE (ImagePicker)
       formData.append("avatar", {
         uri: image.uri,
@@ -100,14 +100,10 @@ export default function HomeScreen() {
       });
     }
     // Upload ke backend
-    await api.put(`/${id}/avatar`, formData, {
+    await api.put(`/edit/${id}/avatar`, formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
-
-    // Refresh ulang list
-    setPage(1);
-    fetchContacts(true, sortOrder);
-
+  reloadContacts();
   } catch (err) {
     console.error("Error uploading avatar:", err);
   }
@@ -125,15 +121,20 @@ export default function HomeScreen() {
   };
   const updateContact = async (id, data) => {
   try {
-    await api.put(`/${id}`, data);
+    await api.put(`/edit/${id}`, data);
 
     // reload data setelah save
     setEditingId(null);
-    setPage(1);
-    fetchContacts(true, sortOrder);
+   reloadContacts();
   } catch (err) {
     console.error("Error updating contact:", err.message);
   }
+};
+
+const reloadContacts = async () => {
+  setPage(1);
+  await new Promise(res => setTimeout(res,50));
+  fetchContacts(true,sortOrder);
 };
 
   return (
@@ -159,8 +160,7 @@ export default function HomeScreen() {
             onChangeText={(text) => {
               setSearch(text);
               // when user types, reset page and contacts and debounce if needed
-              setContacts([]);
-              setPage(1);
+             reloadContacts();
             }}
           />
         </View>
@@ -192,7 +192,7 @@ export default function HomeScreen() {
               onCancel={() => setEditingId(null)}
               onSave={(data) => updateContact(item._id, data)}
               onDelete={() => handleDelete(item._id)}
-               onChangeAvatar={() => changeAvatar(item._id)} 
+               onChangeAvatar={(image) => changeAvatar(item._id, image)} 
             />
           </View>
         )}

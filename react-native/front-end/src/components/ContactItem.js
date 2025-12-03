@@ -35,16 +35,15 @@ export default function ContactItem({
       <View style={styles.row}>
 
         {/* Avatar */}
-        <TouchableOpacity onPress={onChangeAvatar}>
           <AvatarPicker
             avatarUrl={
               contact.avatar
                 ? `http://192.168.1.15:3001${contact.avatar}`
                 : null
             }
-            onSelect={(image) => onChangeAvatar(contact._id, image)}
+            onSelect={onChangeAvatar}
           />
-        </TouchableOpacity>
+      
 
         {isEditing ? (
           // ========================
