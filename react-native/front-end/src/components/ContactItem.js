@@ -1,40 +1,102 @@
-import React from "react";
-import { View, Text, TouchableOpacity, Image, StyleSheet } from "react-native";
+import React, { useState, useEffect } from "react";
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  Image,
+  StyleSheet,
+  TextInput,
+} from "react-native";
 import { FontAwesome } from "@expo/vector-icons";
 
-export default function ContactItem({ contact, onPress, onDelete }) {
+export default function ContactItem({
+  contact,
+  isEditing,
+  onEdit,
+  onSave,
+  onCancel,
+  onDelete,
+  onChangeAvatar,
+}) {
+  const [name, setName] = useState(contact.name);
+  const [phone, setPhone] = useState(contact.phone);
+
+  // setiap kali masuk mode edit → sync field
+  useEffect(() => {
+    if (isEditing) {
+      setName(contact.name);
+      setPhone(contact.phone);
+    }
+  }, [isEditing]);
+
   return (
     <View style={styles.card}>
-      {/* Horizontal Row */}
       <View style={styles.row}>
-        
-        {/* Avatar kiri */}
-        <Image
-          source={
-            contact.avatar
-              ? { uri: `http://192.168.1.15:3001${contact.avatar}?t=${Date.now()}` }
-              : require("../assets/avatar-placeholder.png")
-          }
-          style={styles.avatar}
-        />
 
-        {/* INFO + ACTION BUTTONS */}
-        <View style={styles.infoContainer}>
-          <Text style={styles.name}>{contact.name}</Text>
-          <Text style={styles.phone}>{contact.phone}</Text>
+        {/* Avatar */}
+        <TouchableOpacity onPress={onChangeAvatar}>
+          <Image
+            source={
+              contact.avatar
+                ? { uri: `http://192.168.1.15:3001${contact.avatar}?t=${Date.now()}` }
+                : require("../assets/avatar-placeholder.png")
+            }
+            style={styles.avatar}
+          />
+        </TouchableOpacity>
 
-          {/* Buttons */}
-          <View style={styles.actions}>
-            <TouchableOpacity onPress={onPress} style={styles.iconBtn}>
-              <FontAwesome name="edit" size={18} color="#000" />
-            </TouchableOpacity>
+        {isEditing ? (
+          // ========================
+          // MODE EDIT (INPUT FORM)
+          // ========================
+          <View style={styles.infoContainer}>
+            <TextInput
+              value={name}
+              onChangeText={setName}
+              style={styles.input}
+              placeholder="Name"
+            />
 
-            <TouchableOpacity onPress={onDelete} style={styles.iconBtn}>
-              <FontAwesome name="trash" size={18} color="#000" />
-            </TouchableOpacity>
+            <TextInput
+              value={phone}
+              onChangeText={setPhone}
+              style={styles.input}
+              placeholder="Phone"
+              keyboardType="phone-pad"
+            />
+
+            <View style={styles.actions}>
+              <TouchableOpacity
+                onPress={() => onSave({ name, phone })}
+                style={styles.iconBtn}
+              >
+                <FontAwesome name="save" size={20} color="green" />
+              </TouchableOpacity>
+
+              <TouchableOpacity onPress={onCancel} style={styles.iconBtn}>
+                <FontAwesome name="times" size={20} color="red" />
+              </TouchableOpacity>
+            </View>
           </View>
-        </View>
+        ) : (
+          // ========================
+          // MODE NORMAL (DISPLAY)
+          // ========================
+          <View style={styles.infoContainer}>
+            <Text style={styles.name}>{contact.name}</Text>
+            <Text style={styles.phone}>{contact.phone}</Text>
 
+            <View style={styles.actions}>
+              <TouchableOpacity onPress={onEdit} style={styles.iconBtn}>
+                <FontAwesome name="edit" size={18} color="#000" />
+              </TouchableOpacity>
+
+              <TouchableOpacity onPress={onDelete} style={styles.iconBtn}>
+                <FontAwesome name="trash" size={18} color="#000" />
+              </TouchableOpacity>
+            </View>
+          </View>
+        )}
       </View>
     </View>
   );
@@ -54,7 +116,7 @@ const styles = StyleSheet.create({
 
   row: {
     flexDirection: "row",
-    alignItems: "flex-start",  
+    alignItems: "flex-start",
   },
 
   avatar: {
@@ -66,7 +128,6 @@ const styles = StyleSheet.create({
 
   infoContainer: {
     flex: 1,
-    justifyContent: "space-between",
   },
 
   name: {
@@ -81,12 +142,23 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
 
+  input: {
+    borderWidth: 1,
+    borderColor: "#aaa",
+    borderRadius: 6,
+    paddingHorizontal: 8,
+    paddingVertical: 6,
+    marginBottom: 6,
+    backgroundColor: "#fff",
+  },
+
   actions: {
     flexDirection: "row",
     gap: 14,
+    marginTop: 6,
   },
 
   iconBtn: {
     paddingVertical: 4,
-  }
+  },
 });

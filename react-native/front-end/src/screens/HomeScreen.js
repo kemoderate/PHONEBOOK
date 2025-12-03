@@ -12,10 +12,12 @@ import ContactItem from '../components/ContactItem';
 import { useFocusEffect } from '@react-navigation/native';
 import useResponsive from "../../hooks/useResponsive";
 import { FontAwesome } from '@expo/vector-icons';
+import * as ImagePicker from "expo-image-picker";
 
 export default function HomeScreen() {
   const router = useRouter();
-
+  const [editingId, setEditingId] = useState(null);
+ 
   // data & UI state
   const [contacts, setContacts] = useState([]);
   const [search, setSearch] = useState('');
@@ -83,6 +85,41 @@ export default function HomeScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page]);
 
+  const changeAvatar = async (id) => {
+  try {
+    // Buka Image Picker
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.7,
+    });
+
+    if (result.canceled) return;
+
+    const image = result.assets[0];
+
+    const formData = new FormData();
+    formData.append("avatar", {
+      uri: image.uri,
+      name: "avatar.jpg",
+      type: "image/jpeg",
+    });
+
+    // Upload ke backend
+    await api.put(`/${id}/avatar`, formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+
+    // Refresh ulang list
+    setPage(1);
+    fetchContacts(true, sortOrder);
+
+  } catch (err) {
+    console.error("Error uploading avatar:", err);
+  }
+};
+
   const handleDelete = async (id) => {
     try {
       await api.delete(`/${id}`);
@@ -93,6 +130,18 @@ export default function HomeScreen() {
       console.error('Error deleting:', err.message);
     }
   };
+  const updateContact = async (id, data) => {
+  try {
+    await api.put(`/${id}`, data);
+
+    // reload data setelah save
+    setEditingId(null);
+    setPage(1);
+    fetchContacts(true, sortOrder);
+  } catch (err) {
+    console.error("Error updating contact:", err.message);
+  }
+};
 
   return (
     <View style={styles.container}>
@@ -145,12 +194,10 @@ export default function HomeScreen() {
           <View style={styles.cardWrapper(columns)}>
             <ContactItem
               contact={item}
-              onPress={() =>
-                router.push({
-                  pathname: '/edit-contact',
-                  params: { contactId: item._id },
-                })
-              }
+              isEditing={editingId === item._id}
+              onEdit={() => setEditingId(item._id)}
+              onCancel={() => setEditingId(null)}
+              onSave={(data) => updateContact(item._id, data)}
               onDelete={() => handleDelete(item._id)}
             />
           </View>
