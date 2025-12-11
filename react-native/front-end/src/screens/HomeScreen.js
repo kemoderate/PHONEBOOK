@@ -121,7 +121,10 @@ export default function HomeScreen() {
   };
   const updateContact = async (id, data) => {
   try {
-    await api.put(`/edit/${id}`, data);
+    await api.put(`/edit/${id}`, {
+      ...data,
+    avatar: data.avatar ?? data.oldAvatar
+  });
 
     // reload data setelah save
     setEditingId(null);
@@ -190,7 +193,7 @@ const reloadContacts = async () => {
               isEditing={editingId === item._id}
               onEdit={() => setEditingId(item._id)}
               onCancel={() => setEditingId(null)}
-              onSave={(data) => updateContact(item._id, data)}
+              onSave={(data) => updateContact(item._id, { ...data, avatar: item.avatar })}
               onDelete={() => handleDelete(item._id)}
                onChangeAvatar={(image) => changeAvatar(item._id, image)} 
             />
@@ -210,6 +213,7 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingHorizontal: 10,
     paddingTop: 20,
+    backgroundColor: "#FFF",
   },
 
   headerContainer: {
@@ -234,6 +238,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 1,
     borderColor: '#ccc',
+    backgroundColor:'#fff',
     paddingHorizontal: 10,
     borderRadius: 8,
     marginHorizontal: 6,

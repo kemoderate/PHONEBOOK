@@ -23,9 +23,9 @@ export default function AddContactScreen() {
   };
 
   const handleSave = async () => {
-    if (!name || !phone) {
-      return Alert.alert('Error', 'Please fill all fields.');
-    }
+    // if (!name || !phone) {
+    //   return Alert.alert('Error', 'Please fill all fields.');
+    // }
 
     try {
       const formData = new FormData()
@@ -50,17 +50,7 @@ export default function AddContactScreen() {
     }
   };
 
-  const uploadAvatar = async (id) => {
-    const formData = new FormData();
-    formData.append('avatar', {
-      uri: avatar,
-      type: 'image/jpeg',
-      name: 'avatar.jpg'
-    });
-    await api.put(`/edit/${id}/avatar`, formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
-    });
-  };
+  
 
   return (
     <View style={styles.container}>
