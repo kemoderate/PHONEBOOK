@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Home from "./pages/Home";
 import AddContact from "./pages/AddContact";
 import EditContact from "./pages/EditContact";
+import '@fortawesome/fontawesome-free/css/all.min.css';
 
 function App() {
   return (
