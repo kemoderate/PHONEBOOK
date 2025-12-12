@@ -38,7 +38,7 @@ export default function ContactItem({
           <AvatarPicker
             avatarUrl={
               contact.avatar
-                ? `http://192.168.1.21:3001${contact.avatar}`
+                ? `http://192.168.1.9:3001${contact.avatar}`
                 : null
             }
             onSelect={onChangeAvatar}

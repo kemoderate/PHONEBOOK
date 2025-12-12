@@ -7,7 +7,7 @@ export default function Index() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => { 
-    fetch("http://192.168.1.21:3001/api/phonebooks")
+    fetch("http://192.168.1.9:3001/api/phonebooks")
       .then((res) => res.json())
       .then((data) => {
         setContacts(data.phonebooks || []);
