@@ -27,7 +27,7 @@ export default function ContactItem({
 
         {/* Avatar Picker */}
         <AvatarPicker
-          avatarUrl={contact.avatar ? contact.avatarUrl : null}
+          avatarUrl={contact.avatar}
           onSelect={onChangeAvatar}
         />
 

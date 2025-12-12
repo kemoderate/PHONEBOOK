@@ -14,7 +14,7 @@ export default function AddContact() {
     const file = e.target.files[0];
     if (file) {
       setAvatar(file);
-      setPreview(URL.createObjectURL(file)); // preview on web
+      setPreview(URL.createObjectURL(file)); 
     }
   };
 
