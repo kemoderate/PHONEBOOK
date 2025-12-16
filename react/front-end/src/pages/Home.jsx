@@ -2,12 +2,14 @@
 import React, { useEffect, useState, useRef, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import api from "../services/api";
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
+import { faArrowUpAZ, faArrowDownZA, faUserPlus } from "@fortawesome/free-solid-svg-icons";
 import ContactItem from "../components/ContactItem";
 
 export default function Home() {
   const navigate = useNavigate();
 
-  // ui / data state
+  
   const [contacts, setContacts] = useState([]);
   const [page, setPage] = useState(1);
   const [limit] = useState(50);
@@ -15,24 +17,23 @@ export default function Home() {
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(false);
 
-  // control state
+  
   const [search, setSearch] = useState("");
-  const [sortOrder, setSortOrder] = useState("asc"); // asc | desc
+  const [sortOrder, setSortOrder] = useState("asc"); 
   const [editingId, setEditingId] = useState(null);
 
-  // responsive columns
+  
   const [columns, setColumns] = useState(getColumns(window.innerWidth));
 
-  // For debounce search
+  
   const searchDebounceRef = useRef(null);
 
-  // For infinite scroll sentinel
   const sentinelRef = useRef(null);
 
-  // Keep a stable ref for current sortOrder/page/search for observers
+  
   const paramsRef = useRef({ page, search, sortOrder });
 
-  // ---------- helper: build full avatar url ----------
+  
   const getAvatarUrl = (avatarPath) => {
     if (!avatarPath) return null;
     if (avatarPath.startsWith("http")) return avatarPath;
@@ -40,7 +41,7 @@ export default function Home() {
   return `${serverURL}${avatarPath}`;
   };
 
-  // ---------- columns calculation ----------
+ 
   function handleResize() {
     setColumns(getColumns(window.innerWidth));
   }
@@ -49,8 +50,6 @@ export default function Home() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  // ---------- fetch contacts ----------
-  // reset = true will replace list, otherwise append (used for pagination)
   const fetchContacts = useCallback(
     async (reset = false, order = sortOrder, currentPage = page) => {
       if (loading) return;
@@ -84,11 +83,11 @@ export default function Home() {
         setLoading(false);
       }
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [limit, search] // don't include page or sortOrder here; those are passed explicitly
+    
+    [limit, search]
   );
 
-  // ---------- reload (used when search or sort changes) ----------
+  
   const reloadContacts = useCallback(async () => {
     setPage(1);
     // small delay to allow state updates to settle
@@ -96,7 +95,7 @@ export default function Home() {
     fetchContacts(true, sortOrder, 1);
   }, [fetchContacts, sortOrder]);
 
-  // ---------- toggle sort ----------
+  
   const toggleSort = () => {
     const next = sortOrder === "asc" ? "desc" : "asc";
     setSortOrder(next);
@@ -104,7 +103,7 @@ export default function Home() {
     fetchContacts(true, next, 1);
   };
 
-  // ---------- search (with debounce) ----------
+  
   useEffect(() => {
     if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
     searchDebounceRef.current = setTimeout(() => {
@@ -116,19 +115,19 @@ export default function Home() {
     };
   }, [search, reloadContacts]);
 
-  // ---------- when page changes (for infinite load) ----------
+  
   useEffect(() => {
     if (page === 1) return;
     fetchContacts(false, sortOrder, page);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+    
   }, [page]);
 
-  // Keep paramsRef updated (used by observer)
+  
   useEffect(() => {
     paramsRef.current = { page, search, sortOrder };
   }, [page, search, sortOrder]);
 
-  // ---------- infinite scroll using IntersectionObserver ----------
+  
   useEffect(() => {
     if (!sentinelRef.current) return;
     const el = sentinelRef.current;
@@ -151,23 +150,23 @@ export default function Home() {
     return () => obs.disconnect();
   }, [hasMore, loading]);
 
-  // ---------- change avatar (file or mobile-like uri) ----------
+  
   const changeAvatar = async (id, image) => {
     try {
       const formData = new FormData();
       if (image?.file) {
-        // web file
+      
         formData.append("avatar", image.file);
       } else if (image?.uri) {
         try {
-          const response = await fetch(image.uri);           // fetch the blob from the URI
+          const response = await fetch(image.uri);           
           const blob = await response.blob();
           const filename = image.name || "avatar.jpg";
           const fileFromBlob = new File([blob], filename, { type: image.type || blob.type || "image/jpeg" });
           formData.append("avatar", fileFromBlob);
         } catch (e) {
           console.error("Failed to convert uri to file:", e);
-          return; // stop upload
+          return; 
         }
       }
 
@@ -175,7 +174,7 @@ export default function Home() {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
-      // reload first page to reflect avatar change
+      
       setPage(1);
       fetchContacts(true, sortOrder, 1);
     } catch (err) {
@@ -183,11 +182,11 @@ export default function Home() {
     }
   };
 
-  // ---------- delete contact ----------
+ 
   const handleDelete = async (id) => {
     try {
       await api.delete(`/${id}`);
-      // reload first page
+    
       setPage(1);
       fetchContacts(true, sortOrder, 1);
     } catch (err) {
@@ -204,7 +203,7 @@ export default function Home() {
       });
 
       setEditingId(null);
-      // reload (keep on first page)
+     
       setPage(1);
       fetchContacts(true, sortOrder, 1);
     } catch (err) {
@@ -214,11 +213,10 @@ export default function Home() {
 
   // ---------- initial load ----------
   useEffect(() => {
-    // initial load
     setContacts([]);
     setPage(1);
     fetchContacts(true, sortOrder, 1);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
+   
   }, []);
 
   // ---------- render ----------
@@ -226,8 +224,11 @@ export default function Home() {
     <div style={styles.container}>
       {/* header */}
       <div style={styles.headerContainer}>
-        <button style={styles.sortBtn} onClick={toggleSort} title="Toggle sort">
-          {sortOrder === "asc" ? "A→Z" : "Z→A"}
+        <button style={styles.sortBtn} onClick={toggleSort} title= {sortOrder === "asc" ? "A → Z" : "Z → A"}>
+         <FontAwesomeIcon
+         icon={sortOrder === "asc" ? faArrowUpAZ : faArrowDownZA}
+         style={{color: "#000"}}
+         />
         </button>
 
         <div style={styles.searchWrapper}>
@@ -237,14 +238,17 @@ export default function Home() {
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
-              // reloadContacts() is triggered by debounced effect
+            
             }}
             style={styles.searchInput}
           />
         </div>
 
         <button style={styles.addBtn} onClick={() => navigate("/add")}>
-          ➕ Add
+          <FontAwesomeIcon
+            icon={faUserPlus} size="lg"
+            style={{color: "#000" }}
+          />
         </button>
       </div>
 
@@ -260,7 +264,7 @@ export default function Home() {
             <ContactItem
               contact={{
                 ...item,
-                avatar: getAvatarUrl(item.avatar), // ContactItem will use getAvatarUrl inside or parent can provide full URL
+                avatar: getAvatarUrl(item.avatar), 
               }}
               isEditing={editingId === item._id}
               onEdit={() => setEditingId(item._id)}
@@ -286,7 +290,7 @@ export default function Home() {
   );
 }
 
-/* helper to calculate columns from width (approx. like your native useResponsive) */
+
 function getColumns(width) {
   if (width < 640) return 1;
   if (width < 900) return 2;
@@ -314,7 +318,7 @@ const styles = {
     backgroundColor: "#B8860B",
     border: "none",
     borderRadius: 6,
-    color: "#fff",
+    color: "#ddd",
     cursor: "pointer",
     display: "flex",
     alignItems: "center",
