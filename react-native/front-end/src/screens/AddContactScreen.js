@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useRouter } from 'expo-router'
 import { View, Text, TextInput, TouchableOpacity, StyleSheet, Image, Alert } from 'react-native';
 import api from '../services/api';
-import * as ImagePicker from 'expo-image-picker'; // use this if using Expo
+import * as ImagePicker from 'expo-image-picker';
 
 
 export default function AddContactScreen() {
@@ -11,7 +11,56 @@ export default function AddContactScreen() {
   const [phone, setPhone] = useState('');
   const [avatar, setAvatar] = useState(null);
 
-  const pickImage = async () => {
+
+  const requestCameraPermission = async () => {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== 'granted') {
+      Alert.alert('Permission Denied', 'Camera permission is required to take photos.');
+      return false;
+    }
+    return true;
+  };
+  
+  
+  const showImagePickerOptions = () => {
+    Alert.alert(
+      'Select Avatar',
+      'Choose an option',
+      [
+        {
+          text: 'Take Photo',
+          onPress: takePhoto,
+        },
+        {
+          text: 'Choose from Gallery',
+          onPress: pickFromGallery,
+        },
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+      ],
+      { cancelable: true }
+    );
+  };
+
+   const takePhoto = async () => {
+    const hasPermission = await requestCameraPermission();
+    if (!hasPermission) return;
+
+    const result = await ImagePicker.launchCameraAsync({
+      allowsEditing: true,
+      quality: 0.7,
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+    });
+
+    if (!result.canceled) {
+      setAvatar(result.assets[0].uri);
+    }
+  };
+
+
+   const pickFromGallery = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
       allowsEditing: true,
       quality: 0.7,
@@ -23,9 +72,6 @@ export default function AddContactScreen() {
   };
 
   const handleSave = async () => {
-    // if (!name || !phone) {
-    //   return Alert.alert('Error', 'Please fill all fields.');
-    // }
 
     try {
       const formData = new FormData()
@@ -56,7 +102,7 @@ export default function AddContactScreen() {
     <View style={styles.container}>
       <Text style={styles.title}>Add New Contact</Text>
 
-      <TouchableOpacity onPress={pickImage}>
+      <TouchableOpacity onPress={showImagePickerOptions}>
         {avatar ? (
           <Image source={{ uri: avatar }} style={styles.avatar} />
         ) : (

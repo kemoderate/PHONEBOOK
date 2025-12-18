@@ -18,7 +18,7 @@ import * as ImagePicker from "expo-image-picker";
 export default function HomeScreen() {
   const router = useRouter();
   const [editingId, setEditingId] = useState(null);
-  
+
   // data & UI state
   const [contacts, setContacts] = useState([]);
   const [search, setSearch] = useState('');
@@ -36,8 +36,31 @@ export default function HomeScreen() {
 
   // fetchContacts now accepts optional order param
   const fetchContacts = async (reset = false, order = sortOrder) => {
-    if (loading) return;
-    setLoading(true);
+   if (reset) {
+  setContacts(sortContacts(pageData, sortOrder));
+} else {
+  setContacts(prev =>
+    sortContacts([...prev, ...(pageData || [])], sortOrder)
+  );
+}
+
+    useEffect(() => {
+  setContacts(prev => sortContacts(prev, sortOrder));
+}, [sortOrder]);
+
+    const sortContacts = (data, order) => {
+      return [...data].sort((a, b) => {
+        const nameA = a.name?.toString() || '';
+        const nameB = b.name?.toString() || '';
+
+        const result = nameA.localeCompare(nameB, undefined, {
+          sensitivity: 'base',
+          numeric: true
+        });
+
+        return order === 'asc' ? result : -result;
+      });
+    };
 
     try {
       const res = await api.get('/', {
@@ -67,47 +90,45 @@ export default function HomeScreen() {
     const next = sortOrder === 'asc' ? 'desc' : 'asc';
     setSortOrder(next);
     setPage(1);
-    // fetch with reset and new order
-    fetchContacts(true, next);
+    const toggleSort = () => {
+      setSortOrder(prev => (prev === 'asc' ? 'desc' : 'asc'));
+    };
   };
 
-  // reload on focus / when search or sortOrder changes
-  useFocusEffect(
-    useCallback(() => {
-      setContacts([]);
-      reloadContacts();
-      // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [search, sortOrder])
-  );
+  
+  
+    useEffect(() => {
+  setPage(1);
+  fetchContacts(true);
+}, [search]);
 
-  // fetch next pages when page changes
+
   useEffect(() => {
     if (page > 1) fetchContacts(false, sortOrder);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [page]);
+ }, [page]);
 
   const changeAvatar = async (id, image) => {
-  try {
-    const formData = new FormData();
-    if (image?.file) {
-      formData.append("avatar", image.file);
-    }else if (image?.uri){
-      // MOBILE (ImagePicker)
-      formData.append("avatar", {
-        uri: image.uri,
-        type: "image/jpeg",
-        name: "avatar.jpg",
+    try {
+      const formData = new FormData();
+      if (image?.file) {
+        formData.append("avatar", image.file);
+      } else if (image?.uri) {
+        // MOBILE (ImagePicker)
+        formData.append("avatar", {
+          uri: image.uri,
+          type: "image/jpeg",
+          name: "avatar.jpg",
+        });
+      }
+      // Upload ke backend
+      await api.put(`/edit/${id}/avatar`, formData, {
+        headers: { "Content-Type": "multipart/form-data" },
       });
+      reloadContacts();
+    } catch (err) {
+      console.error("Error uploading avatar:", err);
     }
-    // Upload ke backend
-    await api.put(`/edit/${id}/avatar`, formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    });
-  reloadContacts();
-  } catch (err) {
-    console.error("Error uploading avatar:", err);
-  }
-};
+  };
 
   const handleDelete = async (id) => {
     try {
@@ -120,25 +141,25 @@ export default function HomeScreen() {
     }
   };
   const updateContact = async (id, data) => {
-  try {
-    await api.put(`/edit/${id}`, {
-      ...data,
-    avatar: data.avatar ?? data.oldAvatar
-  });
+    try {
+      await api.put(`/edit/${id}`, {
+        ...data,
+        avatar: data.avatar ?? data.oldAvatar
+      });
 
-    // reload data setelah save
-    setEditingId(null);
-   reloadContacts();
-  } catch (err) {
-    console.error("Error updating contact:", err.message);
-  }
-};
+      // reload data setelah save
+      setEditingId(null);
+      reloadContacts();
+    } catch (err) {
+      console.error("Error updating contact:", err.message);
+    }
+  };
 
-const reloadContacts = async () => {
-  setPage(1);
-  await new Promise(res => setTimeout(res,50));
-  fetchContacts(true,sortOrder);
-};
+  const reloadContacts = async () => {
+    setPage(1);
+    await new Promise(res => setTimeout(res, 5));
+    fetchContacts(true, sortOrder);
+  };
 
   return (
     <View style={styles.container}>
@@ -163,7 +184,7 @@ const reloadContacts = async () => {
             onChangeText={(text) => {
               setSearch(text);
               // when user types, reset page and contacts and debounce if needed
-             reloadContacts();
+              reloadContacts();
             }}
           />
         </View>
@@ -195,7 +216,7 @@ const reloadContacts = async () => {
               onCancel={() => setEditingId(null)}
               onSave={(data) => updateContact(item._id, { ...data, avatar: item.avatar })}
               onDelete={() => handleDelete(item._id)}
-               onChangeAvatar={(image) => changeAvatar(item._id, image)} 
+              onChangeAvatar={(image) => changeAvatar(item._id, image)}
             />
           </View>
         )}
@@ -238,7 +259,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 1,
     borderColor: '#ccc',
-    backgroundColor:'#fff',
+    backgroundColor: '#fff',
     paddingHorizontal: 10,
     borderRadius: 8,
     marginHorizontal: 6,
@@ -271,9 +292,9 @@ const styles = StyleSheet.create({
     marginBottom: 10,
   },
 
-  cardWrapper:{
+  cardWrapper: {
     flex: 1,
     padding: 6,
-    minWidth:0,
+    minWidth: 0,
   },
 });

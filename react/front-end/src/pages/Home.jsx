@@ -3,7 +3,7 @@ import React, { useEffect, useState, useRef, useCallback } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import api from "../services/api";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
-import { faArrowUpAZ, faArrowDownZA, faUserPlus } from "@fortawesome/free-solid-svg-icons";
+import { faArrowUpAZ, faArrowDownZA, faUserPlus, faArrowDownAZ } from "@fortawesome/free-solid-svg-icons";
 import ContactItem from "../components/ContactItem";
 
 export default function Home() {
@@ -90,7 +90,7 @@ export default function Home() {
   
   const reloadContacts = useCallback(async () => {
     setPage(1);
-    // small delay to allow state updates to settle
+    
     await new Promise((res) => setTimeout(res, 20));
     fetchContacts(true, sortOrder, 1);
   }, [fetchContacts, sortOrder]);
@@ -226,7 +226,7 @@ export default function Home() {
       <div style={styles.headerContainer}>
         <button style={styles.sortBtn} onClick={toggleSort} title= {sortOrder === "asc" ? "A → Z" : "Z → A"}>
          <FontAwesomeIcon
-         icon={sortOrder === "asc" ? faArrowUpAZ : faArrowDownZA}
+         icon={sortOrder === "asc" ? faArrowDownAZ : faArrowUpAZ }
          style={{color: "#000"}}
          />
         </button>
