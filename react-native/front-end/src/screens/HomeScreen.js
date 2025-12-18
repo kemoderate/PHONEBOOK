@@ -10,7 +10,6 @@ import {
 import { useRouter } from 'expo-router';
 import api from '../services/api';
 import ContactItem from '../components/ContactItem';
-import { useFocusEffect } from '@react-navigation/native';
 import useResponsive from "../../hooks/useResponsive";
 import { FontAwesome } from '@expo/vector-icons';
 import * as ImagePicker from "expo-image-picker";
@@ -30,41 +29,20 @@ export default function HomeScreen() {
   // sort state (moved inside component)
   const [sortOrder, setSortOrder] = useState('asc'); // 'asc' or 'desc'
 
-  const { isMobile, isTablet, isDesktop, columns } = useResponsive();
+  const {columns} = useResponsive();
 
-  const limit = 50;
+  const limit = 5;
 
   // fetchContacts now accepts optional order param
-  const fetchContacts = async (reset = false, order = sortOrder) => {
-   if (reset) {
-  setContacts(sortContacts(pageData, sortOrder));
-} else {
-  setContacts(prev =>
-    sortContacts([...prev, ...(pageData || [])], sortOrder)
-  );
-}
+  const fetchContacts = useCallback(
+    async (reset = false) => {
+      if (loading) return;
+      setLoading(true);
 
-    useEffect(() => {
-  setContacts(prev => sortContacts(prev, sortOrder));
-}, [sortOrder]);
-
-    const sortContacts = (data, order) => {
-      return [...data].sort((a, b) => {
-        const nameA = a.name?.toString() || '';
-        const nameB = b.name?.toString() || '';
-
-        const result = nameA.localeCompare(nameB, undefined, {
-          sensitivity: 'base',
-          numeric: true
-        });
-
-        return order === 'asc' ? result : -result;
-      });
-    };
 
     try {
       const res = await api.get('/', {
-        params: { page, search, limit, sortBy: 'name', sortMode: order },
+        params: { page: reset ? 1 : page, search, limit, sortBy: 'name', sortMode: sortOrder },
       });
 
       const pageData = res.data.phonebooks || [];
@@ -83,29 +61,29 @@ export default function HomeScreen() {
     } finally {
       setLoading(false);
     }
-  };
+  },
+[page,search,sortOrder,loading]
+);
+  
 
   // toggleSort: flip order, reset page, and reload (pass new order explicitly)
-  const toggleSort = () => {
-    const next = sortOrder === 'asc' ? 'desc' : 'asc';
-    setSortOrder(next);
-    setPage(1);
-    const toggleSort = () => {
-      setSortOrder(prev => (prev === 'asc' ? 'desc' : 'asc'));
-    };
-  };
-
-  
+ 
   
     useEffect(() => {
   setPage(1);
   fetchContacts(true);
-}, [search]);
+}, [search,sortOrder]);
 
 
   useEffect(() => {
-    if (page > 1) fetchContacts(false, sortOrder);
- }, [page]);
+    if (page > 1) fetchContacts(false);
+ }, [page,fetchContacts]);
+
+  const toggleSort = () => {
+    const next = sortOrder === 'asc' ? 'desc' : 'asc';
+    setSortOrder(next);
+    setPage(1);
+  }
 
   const changeAvatar = async (id, image) => {
     try {
@@ -135,7 +113,7 @@ export default function HomeScreen() {
       await api.delete(`/${id}`);
       // after delete, reload first page with current sort/search
       setPage(1);
-      fetchContacts(true, sortOrder);
+      fetchContacts(true);
     } catch (err) {
       console.error('Error deleting:', err.message);
     }
@@ -158,7 +136,7 @@ export default function HomeScreen() {
   const reloadContacts = async () => {
     setPage(1);
     await new Promise(res => setTimeout(res, 5));
-    fetchContacts(true, sortOrder);
+    fetchContacts(true);
   };
 
   return (
@@ -181,11 +159,7 @@ export default function HomeScreen() {
             style={styles.searchInput}
             placeholder="Search name or phone..."
             value={search}
-            onChangeText={(text) => {
-              setSearch(text);
-              // when user types, reset page and contacts and debounce if needed
-              reloadContacts();
-            }}
+            onChangeText={setSearch}
           />
         </View>
 
@@ -201,7 +175,7 @@ export default function HomeScreen() {
       {/* GRID LIST */}
       <FlatList
         data={contacts}
-        key={columns}
+        key={`flatlist-${columns}`}
         numColumns={columns}
         keyExtractor={(item) => item._id}
         showsVerticalScrollIndicator={false}
