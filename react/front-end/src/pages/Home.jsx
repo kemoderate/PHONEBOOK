@@ -12,7 +12,7 @@ export default function Home() {
   
   const [contacts, setContacts] = useState([]);
   const [page, setPage] = useState(1);
-  const [limit] = useState(50);
+  const [limit] = useState(10);
   const [hasMore, setHasMore] = useState(true);
   const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(false);
@@ -141,7 +141,7 @@ export default function Home() {
       },
       {
         root: null,
-        rootMargin: "200px",
+        rootMargin: "400px",
         threshold: 0.1,
       }
     );

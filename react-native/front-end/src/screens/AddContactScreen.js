@@ -78,8 +78,9 @@ export default function AddContactScreen() {
       formData.append('name',name);
       formData.append('phone',phone);
 
-      const ext = avatar.split('.').pop();
+      
       if (avatar) {
+        const ext = avatar.split('.').pop();
       formData.append('avatar',{
         uri:avatar,
         type:`image/${ext}`,
