@@ -12,7 +12,6 @@ import api from '../services/api';
 import ContactItem from '../components/ContactItem';
 import useResponsive from "../../hooks/useResponsive";
 import { FontAwesome } from '@expo/vector-icons';
-import * as ImagePicker from "expo-image-picker";
 
 export default function HomeScreen() {
   const router = useRouter();
@@ -28,6 +27,7 @@ export default function HomeScreen() {
   const resettingRef = React.useRef(false);
   const contextIdRef = React.useRef(0);
 
+  
 
 
 

@@ -1,13 +1,27 @@
 import React, { useRef } from "react";
-import { TouchableOpacity, Image, Platform } from "react-native";
+import { TouchableOpacity, Image, Platform ,Alert} from "react-native";
 import * as ImagePicker from "expo-image-picker";
 import useResponsive from "../../hooks/useResponsive";
+
 
 
 export default function AvatarPicker({ avatarUrl, onSelect }) {
     const { isDesktop } = useResponsive();
     const fileInputRef = useRef(null);
 
+
+const showMobileOptions = () => {
+    Alert.alert(
+        "Change Avatar",
+        "Choose an option",
+        [
+            { text: "Camera", onPress: takePhotoMobile },
+            { text: "Gallery", onPress: pickMobile },
+            { text: "Cancel", style: "cancel" },
+        ],
+        { cancelable: true }
+    );
+};
 
     // 📱 MOBILE —  ImagePicker
 
@@ -23,6 +37,23 @@ export default function AvatarPicker({ avatarUrl, onSelect }) {
             onSelect(result.assets[0]);
         }
     };
+
+    const takePhotoMobile = async () => {
+    const { status } = await ImagePicker.requestCameraPermissionsAsync();
+    if (status !== "granted") return;
+
+    const result = await ImagePicker.launchCameraAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.7,
+    });
+
+    if (!result.canceled) {
+        onSelect(result.assets[0]);
+    }
+};
+
 
 
     // DESKTOP — pake <input type="file">
@@ -47,7 +78,7 @@ export default function AvatarPicker({ avatarUrl, onSelect }) {
     return (
         <>
             {/* AVATAR */}
-            <TouchableOpacity onPress={isDesktop ? pickDesktop : pickMobile}>
+            <TouchableOpacity onPress={isDesktop ? pickDesktop : showMobileOptions}>
                 <Image
                     key={avatarUrl + Date.now()}
                     source={avatarUrl ? { uri: avatarUrl } : require("../assets/avatar-placeholder.png")}
